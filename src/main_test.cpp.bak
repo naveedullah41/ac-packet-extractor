@@ -1,0 +1,20 @@
+#include <Arduino.h>
+
+void setup() {
+  Serial.begin(115200);
+  delay(2000);
+  Serial.flush();
+  
+  Serial.println("\n\n════════════════════════════════════════");
+  Serial.println("BASIC AC — SERIAL PORT TEST");
+  Serial.println("════════════════════════════════════════");
+  Serial.println("If you see this, USB CDC is working!");
+  Serial.println("════════════════════════════════════════\n");
+  
+  Serial.flush();
+}
+
+void loop() {
+  Serial.print(".");
+  delay(1000);
+}
