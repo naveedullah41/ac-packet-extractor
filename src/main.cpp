@@ -213,52 +213,54 @@ static bool is_mf(uint8_t b) {
 
 bool scan_tail(const uint8_t* d, uint8_t n, bool print) {
   for (int i = 0; i < (int)n - 9; i++) {
-    if (!is_mf(d[i]))                      continue;
-    if (d[i+1] != 0x00 || d[i+2] != 0x00) continue;
+    if (!is_mf(d[i]))   continue;
+    if (d[i+1] != 0x00) continue;   // only ONE zero before the 16-bit set temp
+    // d[i+2] = set temp HIGH byte (0x00 for ≤25.5°C, 0x01 for 26-35°C, …)
+    // d[i+3] = set temp LOW byte
     if (d[i+4] != 0x00 || d[i+6] != 0x00 || d[i+8] != 0x00) continue;
-    if (i+9 < (int)n && d[i+9] != 0x13)   continue;
+    if (i+9 < (int)n && d[i+9] != 0x13) continue;
 
-    uint8_t mf = d[i];
-    uint8_t sr = d[i+3];
-    uint8_t c1 = d[i+5];
-    uint8_t c2 = d[i+7];
+    uint8_t  mf = d[i];
+    uint16_t sr = ((uint16_t)d[i+2] << 8) | d[i+3];  // ×10 encoding, 16-bit
+    uint8_t  c1 = d[i+5];
+    uint8_t  c2 = d[i+7];
 
     float t1 = c1 / 10.0f;
     float t2 = c2 / 10.0f;
+    float st = sr / 10.0f;
 
     // Coil sanity
     if (t1 < 10.0f || t1 > 60.0f) continue;
 
-    // Update coils (always valid regardless of mode)
-    ac.coil1 = t1;
-    ac.coil2 = t2;
+    // Set-temp sanity gate (skip obviously junk 16-bit values)
+    bool fan_only = is_fan_only(mf);
+    if (!fan_only && (st < 16.0f || st > 35.0f)) continue;
+
+    // Update coils (always valid)
+    ac.coil1    = t1;
+    ac.coil2    = t2;
     ac.mf_byte  = mf;
     ac.mf_valid = true;
 
-    // Set temp — ONLY update in modes that have a setpoint
-    bool fan_only = is_fan_only(mf);
+    // Set temp — only in modes that actually have a setpoint
     if (!fan_only) {
-      float st = sr / 10.0f;
-      if (st >= 16.0f && st <= 32.0f) {
-        ac.set_temp     = st;
-        ac.settemp_valid = true;
-        ac.ts_set       = millis();
-      }
+      ac.set_temp      = st;
+      ac.settemp_valid = true;
+      ac.ts_set        = millis();
     }
-    // In FAN-ONLY: ac.settemp_valid left unchanged (keeps last real setpoint
-    // from before fan-only was engaged, which is useful context)
 
     if (print) {
       Serial.println("  ╔═ TAIL ══════════════════════════════════════════════╗");
       Serial.printf ("  ║  Mode      : %s\n", mode_str(mf));
       Serial.printf ("  ║  Fan       : %s  (mf=0x%02X)\n", fan_str(mf), mf);
       if (!fan_only) {
-        Serial.printf("  ║  Set temp  : %.1f°C  (raw 0x%02X = %u÷10)\n",
-                      sr/10.0f, sr, sr);
+        Serial.printf("  ║  Set temp  : %.1f°C  (raw 0x%02X%02X = %u÷10)\n",
+                      st, d[i+2], d[i+3], sr);
       } else {
-        Serial.printf("  ║  Set temp  : (FAN-ONLY — no setpoint. LCD shows unit NTC: %.1f°C)\n",
+        Serial.printf("  ║  Set temp  : (FAN-ONLY — LCD shows unit NTC: %.1f°C)\n",
                       ac.room_unit_ntc);
-        Serial.printf("  ║  Stale raw : 0x%02X = %.1f°C  (ignore)\n", sr, sr/10.0f);
+        Serial.printf("  ║  Stale raw : 0x%02X%02X = %.1f°C  (ignore)\n",
+                      d[i+2], d[i+3], st);
       }
       Serial.printf ("  ║  Coil 1    : %.1f°C  (raw 0x%02X)\n", t1, c1);
       Serial.printf ("  ║  Coil 2    : %.1f°C  (raw 0x%02X)\n", t2, c2);
@@ -268,7 +270,6 @@ bool scan_tail(const uint8_t* d, uint8_t n, bool print) {
   }
   return false;
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 //  STATUS PRINT
 // ─────────────────────────────────────────────────────────────────────────────
