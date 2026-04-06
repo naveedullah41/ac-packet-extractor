@@ -1,9 +1,7 @@
 {
-	"folders": [
-		{
-			"name": "ac packet extractor",
-			"path": ".."
-		}
-	],
-	"settings": {}
+    "folders": [
+        {
+            "path": ".."
+        }
+    ]
 }
