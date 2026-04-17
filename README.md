@@ -2,7 +2,7 @@
 
 **BASIC/AUX AC RS-485 Protocol Sniffer & Decoder for ESP32-S3**
 
-A PlatformIO-based firmware for the **KinCony B16 (ESP32-S3)** that passively sniffs the RS-485 communication bus between a BASIC/AUX air conditioner indoor unit and its wall controller. It decodes HDLC-framed packets in real time, extracting operating mode, temperatures, fan speed, compressor status, and coil sensor readings — all output over USB-CDC serial at 115 200 baud.
+A PlatformIO-based firmware for the **KinCony B16 (ESP32-S3)** that passively sniffs the RS-485 communication bus between a BASIC/AUX air conditioner indoor unit and its wall controller. It decodes HDLC-framed packets in real time, extracting operating mode, temperatures, fan speed, compressor status, and coil sensor readings — all output over USB-CDC serial at 115200 baud.
 
 ---
 
@@ -107,7 +107,7 @@ pio device monitor
 
 ## Usage
 
-Once flashed, open a serial terminal at **115 200 baud**. The firmware immediately begins listening on the RS-485 bus and printing decoded frames.
+Once flashed, open a serial terminal at **115200 baud**. The firmware immediately begins listening on the RS-485 bus and printing decoded frames.
 
 ### Serial Commands
 
@@ -337,7 +337,7 @@ ac-packet-extractor/
 | No frames detected | Wrong baud rate or disconnected bus | Verify 9600 baud wiring and that the AC system is powered on |
 | `[?]` unknown frames | Unrecognized packet format | These are normal — not all frames on the bus are documented |
 | `[HDLC] overflow` | Frame exceeds 128-byte buffer | Rare; may indicate electrical noise on the bus |
-| Serial monitor shows garbage | Wrong monitor baud rate | Set your terminal to **115 200 baud** |
+| Serial monitor shows garbage | Wrong monitor baud rate | Set your terminal to **115200 baud** |
 | No USB serial port appears | USB-CDC not enabled or driver missing | Ensure `ARDUINO_USB_CDC_ON_BOOT=1` build flag is set (it is by default in `platformio.ini`) |
 | Set temp shows stale value in Fan-Only | Expected behavior | The protocol transmits a leftover byte; the decoder correctly ignores it |
 
